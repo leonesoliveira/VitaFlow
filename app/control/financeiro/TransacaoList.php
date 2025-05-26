@@ -238,7 +238,63 @@ class TransacaoList extends TPage
         parent::add($container);
 
     }
+  public function onExportCsv($param = null) 
+    {
+        try
+        {
+            $output = 'app/output/'.uniqid().'.csv';
 
+            if ( (!file_exists($output) && is_writable(dirname($output))) OR is_writable($output))
+            {
+                $this->limit = 0;
+                $objects = $this->onReload();
+
+                if ($objects)
+                {
+                    $handler = fopen($output, 'w');
+                    TTransaction::open(self::$database);
+
+                    foreach ($objects as $object)
+                    {
+                        $row = [];
+                        foreach ($this->datagrid->getColumns() as $column)
+                        {
+                            $column_name = $column->getName();
+
+                            if (isset($object->$column_name))
+                            {
+                                $row[] = is_scalar($object->$column_name) ? $object->$column_name : '';
+                            }
+                            else if (method_exists($object, 'render'))
+                            {
+                                $column_name = (strpos($column_name, '{') === FALSE) ? ( '{' . $column_name . '}') : $column_name;
+                                $row[] = $object->render($column_name);
+                            }
+                        }
+
+                        fputcsv($handler, $row);
+                    }
+
+                    fclose($handler);
+                    TTransaction::close();
+                }
+                else
+                {
+                    throw new Exception(_t('No records found'));
+                }
+
+                TPage::openFile($output);
+            }
+            else
+            {
+                throw new Exception(_t('Permission denied') . ': ' . $output);
+            }
+        }
+        catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+        }
+    }
   
     public function onExportXls($param = null) 
     {
