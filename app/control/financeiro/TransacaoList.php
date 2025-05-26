@@ -238,8 +238,7 @@ class TransacaoList extends TPage
         parent::add($container);
 
     }
-
-    public function onExportCsv($param = null) 
+  public function onExportCsv($param = null) 
     {
         try
         {
@@ -296,6 +295,7 @@ class TransacaoList extends TPage
             new TMessage('error', $e->getMessage()); // shows the exception error message
         }
     }
+  
     public function onExportXls($param = null) 
     {
         try
