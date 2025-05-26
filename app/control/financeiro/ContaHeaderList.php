@@ -459,7 +459,47 @@ class ContaHeaderList extends TPage
             new TMessage('error', $e->getMessage()); // shows the exception error message
         }
     }
-   
+    public function onExportPdf($param = null) 
+    {
+        try
+        {
+            $output = 'app/output/'.uniqid().'.pdf';
+
+            if ( (!file_exists($output) && is_writable(dirname($output))) OR is_writable($output))
+            {
+                $this->limit = 0;
+                $this->datagrid->prepareForPrinting();
+                $this->onReload();
+
+                $html = clone $this->datagrid;
+                $contents = file_get_contents('app/resources/styles-print.html') . $html->getContents();
+
+                $dompdf = new \Dompdf\Dompdf;
+                $dompdf->loadHtml($contents);
+                $dompdf->setPaper('A4', 'portrait');
+                $dompdf->render();
+
+                file_put_contents($output, $dompdf->output());
+
+                $window = TWindow::create('PDF', 0.8, 0.8);
+                $object = new TElement('object');
+                $object->data  = $output;
+                $object->type  = 'application/pdf';
+                $object->style = "width: 100%; height:calc(100% - 10px)";
+
+                $window->add($object);
+                $window->show();
+            }
+            else
+            {
+                throw new Exception(_t('Permission denied') . ': ' . $output);
+            }
+        }
+        catch (Exception $e) // in case of exception
+        {
+            new TMessage('error', $e->getMessage()); // shows the exception error message
+        }
+    }
     public function onExportXml($param = null) 
     {
         try
